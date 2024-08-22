@@ -1,0 +1,870 @@
+Construindo uma API REST com Express e MongoDB
+
+API REST -> Extremamente comum em programação web.
+
+REST -> representational state transfer
+
+-> Utiliza o protocolo HTTP para transmissão de dados
+
+
+As APIs também podem ser desenvolvidas seguindo outras arquiteturas além do REST. Seguem alguns exemplos:
+
+APIs SOAP: SOAP (Simple Object Access Protocol ou protocolo simples de acesso a objetos) utiliza o formato de dados XML e pode usar HTTP ou outros protocolos na comunicação. É um formato mais antigo que o REST e muito utilizado por aplicações de grande porte, porém mais lento que o REST.
+
+Event-Driven APIs: APIs orientadas a eventos, ao contrário das APIs REST, não dependem de requisições feitas pelo lado cliente para iniciar a comunicação. Nesse caso, o cliente ou clientes “inscritos” na API se comunicam com ela através de gatilhos de eventos, como, por exemplo, um novo registro de usuário.
+
+APIs GraphQL: o GraphQL é uma linguagem de consulta (query) de APIs e também um runtime para executar estas consultas. É uma alternativa ao REST que pode se conectar a diversas APIs e bases de dados diferentes e retornar objetos complexos através de uma única requisição.
+
+APIs gRPC: Remote Procedure Calls (ou chamadas procedurais remotas), desenvolvido pelo Google, é um framework baseado em HTTP2 para comunicação síncrona e assíncrona, que visa facilitar comunicação rápida e simplificada entre diversos serviços.
+
+
+
+Començando...
+
+No terminal npm init -y para criar o arquivo package.json
+
+No arquivo package.json:
+abaixo da "main":"index.js",
+inserir "type":"module"
+
+Criando o servidor
+
+Depois criar um arquivo chamado "server.js"
+
+Dentro dele "import http from "http"; //o http é uma biblioteca nativa do node, não requer instalação
+
+//protocolo HTTP -> Hypertext Transfer Protocol
+
+//O protocolo http são requisições do cliente para o servidor, o cliente é o computador e o servidor é a base onde estão as informações
+//cliente request -> servidor
+// cliente <- response servidor
+
+Depois cria uma const server que vai ser o servidor local e essa const vai receber a biblioteca http seguida do método createServer()
+
+const server = http.createServer()
+
+Este método requer uma função callback, que recebe dois argumentos, denominados req e res, requisição e resposta.
+
+const server = http,createServer((req,res) =>{
+
+});
+
+Duas coisas vão acontecer quando criarmos um servidor. Primeiro, chamaremos o objeto res, ou seja, o objeto resposta, e dentro dele, a biblioteca HTTP terá um método chamado writeHead(). Este método é referente ao cabeçalho (ou header) da requisição HTTP.
+
+const server = http.createServer((req, res) => {
+  res.writeHead();
+});
+
+Toda comunicação HTTP, tanto a requisição quanto a resposta, tem cabeçalhos. Os cabeçalhos contêm todas as informações necessárias para que a comunicação funcione corretamente.
+GET / HTTP/1.1
+Host: www.google.com
+User-Agent: curl/7.68.0
+Accept: text/javascript
+X-Test: hello
+
+As respostas também têm seus próprios cabeçalhos. O cabeçalho da resposta da requisição que fizemos, por exemplo, para www.google.com, trouxe a resposta 200 OK. O número 200 é o código de status HTTP, que significa que a comunicação foi bem-sucedida.
+HTTP/1.1 200 OK
+Date: Thu, 13 Jul 2023 00:19:01 GMT
+Expires: -1
+Cache-Control: private, max-age=0
+Content-Type: text/html; charset=ISO-8859-1
+Content-Security-Policy-Report-Only: object-src
+
+Vamos criar nossos próprios cabeçalhos durante o curso. Um cabeçalho de requisição é uma das partes mais importantes, pois precisa ser corretamente montado para que a comunicação ocorra sem problemas e não retorne erros.
+
+Agora que já entendemos o que deve conter em um cabeçalho de requisição, podemos prosseguir para a escrita de nossa função. Após utilizar o método writeHead(), o primeiro parâmetro que ele receberá será o número 200, que corresponde à resposta OK.
+
+O segundo será um objeto JavaScript ({}) que terá um conjunto de chave e valor. Ambos serão strings. A chave será Content-Type e o valor será text/plain, que é o tipo de dado que iremos utilizar na nossa primeira requisição de teste
+
+Em seguida, vamos chamar res novamente e utilizar o método end(), onde passaremos o texto que desejamos transmitir. Encerraremos a resposta com o texto "Curso de Node.js".
+
+
+Criando uma conexão com o servidor
+
+Chamaremos o server, que será um objeto grande com vários métodos e propriedades, junto ao método listen().
+
+Esse método receberá dois parâmetros, o primeiro será um número 3000, o segundo será uma fuunção callback.
+
+server.listen(3000, () => {
+    Console.log("Servidor escutando!")
+})
+
+O que o nosso server faz com o método listen()? "Listen" ("ouvir" em inglês) é um termo que utilizamos bastante quando trabalhamos com eventos. Um evento que vai acontecer em um servidor, por exemplo, é uma conexão. Alguém se conectou a esse servidor para fazer uma requisição e receber uma resposta.
+
+Para tornar o código mais legível, faremos uma refatoração no início do arquivo, logo após o import. Na linha 3, vamos criar uma constante chamada PORT e atribuir o valor 3000 a ela.
+
+const PORT = 3000
+
+Executando o arquivo
+
+node server.js
+
+
+Durante seus estudos de JavaScript, você pode ter encontrado códigos diferentes que fazem o mesmo trabalho. Por exemplo:
+const express = require('express');
+const LivroController = require('../controllers/livroController.js');
+
+import express from 'express';
+import LivroController from '../controllers/livroController.js';
+
+Ambos os códigos fazem a importação de módulos para um arquivo. Estes módulos podem vir de uma biblioteca externa (como express) ou de outros módulos desenvolvidos internamente no projeto (como LivroController).
+
+Até este momento, já criamos um projeto Node.js e um servidor local.
+
+O arquivo package.json é o arquivo principal de qualquer projeto em Node.js.
+
+Até o momento, não abordamos como exatamente nossa API fornecerá as informações
+
+Criando rotas
+
+Para a API, precisamos definir o recurso que queremos acessar, que pode ser livros, editoras, admin, e assim por diante. Tudo isso é feito através de rotas. Afinal, o produto final da API é um conjunto de endereços HTTP, um conjunto de links, isto é, de rotas. É isso que começaremos a construir agora.
+
+Quando usamos apenas /, normalmente, nos referimos à rota base, que não disponibiliza nenhum recurso específico. Nesse caso, declaramos que, ao acessar a rota base, ou seja, a URL base, será exibida a informação "Curso de Node.js".
+
+const rotas = {
+  "/": "Curso de Node.js"
+};
+
+Agora vamos passar essa informação para o escopo de createServer(). A primeira linha da função writeHead continua a mesma. No entanto, em vez de passarmos a string diretamente para o método res.end(), passaremos rotas[req.url].
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end(rotas[req.url]);
+});
+
+A notação de colchetes é usada para passar uma variável como propriedade dentro do objeto rotas. Normalmente, usamos ponto, mas como passamos uma informação variável, usamos a notação de colchetes, que é um recurso próprio de objetos JavaScript.
+
+Porém, o que é req.url? req é um dos argumentos recebidos pela função createServer(). Ou seja, toda vez que uma requisição é recebida, ela traz consigo, entre várias outras informações, uma propriedade chamada url.
+
+
+
+Reiniciando o servidor
+
+Uma vez que o servidor é iniciado, ele não detecta mais as alterações que fazemos no código
+
+Para resolver esta questão, vamos instalar uma biblioteca muito conhecida para todas as pessoas que trabalham com Node, chamada Nodemon.
+
+npm install i nodemon@3.0.1
+
+Na seção scripts do package.json, adicionaremos um script que chamaremos de dev, que pode ser posicionado tanto antes quanto depois do script test já existente. O valor dele será nodemon server.js. Dessa forma, utilizamos o Nodemon para executar o arquivo server.js.
+
+"scripts": {
+  "dev": "nodemon server.js",
+  "test": "echo \"Error: no test specified\" && exit 1"
+}
+
+npm run dev
+
+Com isso, o Nodemon está iniciado e irá monitorar todas as nossas alterações. A mensagem "servidor escutando!" foi exibida, que é o console.log() inserido anteriormente.
+
+
+
+Fazendo uma requisição
+
+Agora podemos voltar ao navegador e realizar uma nova requisição para localhost:3000
+
+Vamos fazer mais um teste no objeto rotas para visualizarmos algumas outras rotas em andamento. Adicionaremos duas rotas após a rota /. A primeira será chamada /livros, que terá como valor a string "Entrei na rota livros". Por fim, a terceira rota será chamada /autores e terá um valor de string "Entrei na rota autores".
+
+const rotas = {
+  "/": "Curso de Express API",
+  "/livros": "Entrei na rota livros",
+  "/autores": "Entrei na rota autores"
+};
+
+Sempre que vamos trabalhar com um projeto em Node.js do zero, uma das primeiras coisas que fazemos é criar um arquivo de configuração utilizando o comando npm init ou yarn init, assim como para todas as instalações de libs externas utilizamos o comando npm install <nome do pacote> ou yarn add <nome do pacote>.
+Ambos são gerenciadores de pacotes, sendo que NPM é acrônimo de Node Package Manager ou gerenciadores de pacotes do Node.
+
+Algumas libs e frameworks mais complexas vão solicitar que a instalação seja feita globalmente para funcionar. Sempre vale a pena consultar a documentação de cada uma! Para fazer uma instalação global de pacotes, utilizamos os comandos npm install -g <nome do pacote> ou yarn add global <nome do pacote>.
+
+
+
+
+
+Iniciando com Express
+
+Neste momento, já criamos um servidor local e entendemos como ocorre a comunicação HTTP, a relação cliente-servidor, requisições e respostas
+
+O desafio agora é que o volume de tarefas aumentará consideravelmente tanto para as rotas quanto para o servidor.
+
+Todo esse esforço que precisamos fazer para construir esta API é uma tarefa comum de requisições HTTP.
+
+O Express é um framework que vamos utilizar para nos auxiliar no gerenciamento de rotas e do servidor HTTP.
+
+Chamamos de framework um conjunto maior de bibliotecas ou de códigos e lib são bibliotecas menores.
+
+E o Express é o framework de Node.js para servidores HTTP mais famoso e um dos mais utilizados no mercado.
+
+No terminal instalar o express:
+
+npm install express@4.18.1
+
+Depois a primeira coisa que farei é criar uma pasta chamada "src" na raiz do projeto. "src" é a abreviação de source code (código fonte), que é o nome padrão para a pasta onde ficam todos os arquivos da nossa API. Dentro de "src", criarei um arquivo "app.js", onde iniciaremos o Express.
+Dentro desse arquivo, a primeira coisa que farei é incorporar o Express com o comando import express from "express";. Essa linha importa toda a biblioteca que instalamos com o npm, nos fornecendo todos os métodos para utilizarmos.
+Em seguida, criarei uma constante chamada app. Essa constante será uma instância do Express e receberá como valor o resultado de express(). Portanto, ao executar a função express, todas as funções do Express serão atribuídas à variável app.
+
+import express from "express";
+
+const app = express();
+
+
+Com o Express iniciado, conseguiremos realizar alguns testes para entender como os métodos do Express funcionam com as rotas. Criarei nossa primeira rota com app.get().
+
+Esse método get() receberá dois parâmetros, assim como antes. O primeiro será uma string e passarei apenas uma barra ("/"), indicando a URL base da nossa API. O segundo parâmetro será uma função de retorno (ou callback), que também recebe os dois parâmetros que já vimos antes: req e res (abreviações para requisição e resposta). Também criarei uma arrow function, abrindo e fechando chaves em seguida.
+
+Dentro das chaves, chamarei res.status(200).send('Curso de Node.js');. Com essas instruções, o servidor retornará o status 200 e enviará a string "Curso de Node.js". Vamos falar mais sobre o status 200 em breve.
+
+import express from 'express';
+
+const app = express();
+
+app.get("/", (req, res) => {
+  res.status(200).send("Curso de Node.js");
+});
+
+Estamos passando para o Express a responsabilidade de gerenciar as rotas que estávamos criando manualmente antes, no arquivo server.js com um objeto JavaScript. Então, a partir de agora, quem vai cuidar de ouvir as rotas sendo chamadas, no caso que estamos fazendo via navegador, administrando as requisições e as respostas, é o próprio Express.
+
+O que antes era feito diretamente pela biblioteca interna do Node, o HTTP, será agora responsabilidade do Express: A mesma operação que fizemos no server.js, ao escrever o cabeçalho e passar o status code 200 de OK e o conteúdo da resposta.
+
+Mas antes de testarmos novamente, preciso fazer o módulo app, que acabamos de criar, se comunicar com o servidor. Então, vou exportar no final do arquivo app.js com export default app, para conseguirmos exportar esse módulo.
+
+Agora, retorno ao arquivo "server.js", vou comentar a linha import http from http por enquanto e, em seu lugar, vou importar o módulo app. Fica assim: import app from "./src/app";.
+
+A porta vai permanecer como a 3000, por enquanto.
+
+Na parte da criação do servidor, ele vai deixar de ser create server. Não precisamos mais da constante server, porque agora quem vai criar o servidor é app, ou seja, o Express. Então, por enquanto, vou comentar a linha a seguir, apenas para verificar se está tudo funcionando corretamente.
+
+Fazendo o método post 
+
+app.post("/livros", (req, res) => {
+
+})
+
+De onde vão sair os dados que vão ser utilizados para criar um novo livro? Eles vão sair de req.body, encerrado com ponto e vírgula.
+
+app.post("/livros", (req, res) => {
+    livros.push(req.body);
+})
+
+Então, o que é req.body?
+
+Já abordamos anteriormente o req.url. Sempre que falamos de req estamos falando do objeto requisição, que está sendo recebido dentro da função que é chamada em app.post. Todo o gerenciamento de ir na rota, pegar as informações e criar esses dois objetos, tanto o req quanto o res, é responsabilidade do Express.
+
+Assim, o Express cria esse objeto req e dentro dele tem uma propriedade que chama body, ou seja, corpo. Que corpo é esse? É o corpo da requisição.
+
+Falamos anteriormente sobre cabeçalhos (headers): Toda requisição e toda resposta HTTP tem cabeçalhos com as informações necessárias.
+
+Porém, algumas requisições e respostas HTTP também têm body, também têm corpo. Quando só queremos buscar coisas com get, nossas requisições não precisam ter corpo, só precisam ter cabeçalho com as informações.
+
+Porém, quando queremos enviar dados para serem criados, por exemplo, post cria um novo registro, nossa requisição também tem que ter um body, também tem que ter um corpo. No caso, a requisição HTTP tem que enviar os dados que queremos que sejam armazenados.
+
+Antes de testarmos, tem um detalhe bem importante que temos que incluir lá no começo do nosso arquivo app.js, embaixo de onde criamos a const app. Trata-se do app.use, uma função, e vou passar como parâmetro uma outra função, que vai ser express.json.
+
+app.use(express.json());
+
+Assim, temos aqui uma função executando outra função. Isso se chama middleware.
+
+Importante lembrar que toda requisição deve ter uma resposta. Então, abaixo do local onde fizemos o push do novo livro na nossa array livros, precisamos enviar uma resposta de volta para quem fez a requisição.
+
+Portanto, teremos res.status. Agora, ao invés de 200, vou passar 201, que é o código de status HTTP para registro criado. Quando fazemos uma operação com sucesso em qualquer requisição, o código é 200. Quando criamos algo com sucesso, o código é 201.
+
+E utilizarei também .send, porque vou passar uma string dizendo "Livro cadastrado com sucesso". Neste caso, não precisamos de JSON, podemos usar apenas .send.
+
+app.post("/livros", (req, res) => {
+    livros.push(req.body);
+    res.status(201).send("Livro cadastrado com sucesso");
+})
+
+No postman
+
+A URL a ser utilizada é a nossa localhost:3000/livros.
+
+E precisamos enviar um corpo nessa requisição. Então, abaixo do endereço, temos um menu, o "body". Clicarei nele, selecionarei a opção RAW e no último menu, que começa com texto, selecionarei JSON, que é o tipo de dado que queremos enviar na nossa requisição.
+
+modelo:
+
+{
+    
+    "id": 4,
+    "titulo": "A Deise"
+}
+
+ Qualquer alteração que fizermos e salvarmos o arquivo, assim que o nodemon reiniciar o servidor, essas alterações vão desaparecer, porque esse array está em memória.
+
+
+
+Buscando e atualizando livro
+
+Como posso indicar ao Express que esse dado será variável? Eu prefixo isso com dois pontos. Portanto, teremos /livros/:id. Com esses dois pontos, estou informando ao Express que o ID será uma informação variável, que será processada de acordo com o valor que for passado.
+
+app.get("/livros/:id", (req, res) => {
+
+})
+
+A função buscaLivro vai receber um ID, que é o que vai chegar via requisição, naquela variável que mencionei com dois pontos. Essa função vai procurar dentro do array livros, se existe um livro com esse ID e em qual índice ele está do array, para que possamos recupera-lo.
+
+Portanto, ela vai retornar o resultado de livros.findIndex, que é um método do JavaScript para arrays que retornam o índice onde está o elemento desejado, baseado no que passamos a ele.
+
+Então, findIndex é um método callback também, que vai receber cada livro do nosso array de livros e vai retornar, por sua vez, se livro.id for estritamente igual ao ID recebido no parâmetro.
+
+Para fazer essa comparação corretamente com os três iguais do JavaScript, primeiro precisamos converter esse ID para number. Então, Number(id), caso contrário, ele vai tentar comparar uma string com um número usando a comparação estrita e não vai dar certo.
+
+function buscaLivro(id) {
+    return livros.findIndex(livro => {
+        return livro.id === Number(id);
+    })
+}
+
+Voltando ao app.get, vamos criar uma const index para buscar esse índice e salvar na variável. Ele será o resultado de buscaLivro, que é a nossa função, recebendo o quê? req.params.id.
+
+Params é outra propriedade que vem dentro do nosso objeto requisição, montado pelo Express. 'Params', por quê? Porque é um parâmetro. Estamos passando ID como um parâmetro da rota e usamos os dois pontos para indicá-lo como um parâmetro variável. O ID é o nome que nós atribuímos a esse parâmetro.
+
+Então, se nós identificássemos com livros/:id, qualquer outro nome ou identificador, ele seria recebido como essa propriedade do objeto dentro de params. Para esclarecer req.params - porque pode haver mais de um - req.params.id vai puxar a requisição, passar para dentro de buscaLivro e, então, buscaLivro vai retornar algo e guardar esse número na constante index.
+
+A partir disso, podemos acessar o nosso array e passar isso adiante. Então, agora podemos criar a nossa resposta. res.status vai ser 200 (de OK), res.status(200).json e o resultado será o array livros[index], porque index é a posição que foi localizada pela função.
+
+app.get("/livros/:id", (req, res) => {
+    const index = buscaLivro(req.params.id);
+    res.status(200).json(livros[index]);
+})
+
+Vamos aproveitar que estamos aqui e fazer, com mais agilidade agora, um método para alterar o nome de um livro, que é o método put. Utilizamos get para obter, post para criar e put ou patch para alterar um registro que já existe. Deixarei material extra sobre esses dois métodos para você conferir as diferenças entre eles.
+
+Iniciamos buscando esse livro na nossa base, encontramos o livro na nossa base e, agora, simplesmente utilizamos um método JavaScript padrão para alterar o objeto. Então, livros[index], por exemplo, não podemos alterar o ID, por padrão. O ID é um identificador único, mas podemos alterar o título. Então, podemos passar livros[index].titulo que será recebido e substituí-lo por req.body.titulo.
+
+app.put("/livros/:id", (req, res) => {
+    const index = buscaLivro(req.params.id);
+    livros[index].título = req.body.título;
+    res.status(200).json(livros);
+})
+
+
+
+DELETE
+
+app.delete('/livros/:id', (req, res) => {
+  const index = buscaLivro(req.params.id);
+  livros.splice(index, 1);
+  res.status(200).send('Livro removido com sucesso.');
+}); 
+
+Nesse processo, não é necessário enviar nada no corpo da requisição. Ao clicar em "Send", o retorno é "Livro removido com sucesso". Agora, se retornarmos à requisição GET e fizermos uma nova solicitação apenas para /livros, o livro de id 1, "O Senhor dos Anéis", deverá ter sido removido do array. Após o teste, o resultado é o seguinte:
+
+http://localhost:3000/livros/1
+
+Deleta o livro com id 1
+
+CRUD COMPLETO
+
+
+
+
+PERSISTÊNCIA DE DADOS
+
+o que são dados? 
+
+Todas as informações referente ao nosso produto
+
+SQL: Structured Query Language (Linguagem de Consulta Estruturada).
+
+Os bancos SQL são muito antigos, existem desde os anos 70
+
+O SQL se caracteriza pelo uso de tabelas relacionais, por isso também os chamamos de bancos relacionais. Os dados no SQL são estruturados no formato de tabelas, com colunas e linhas, semelhantes a uma planilha do Excel.
+
+SQL: MariaDB, PostgreSQL, MySQL, SQLite.
+
+O SQL se caracteriza pelo uso de tabelas relacionais, por isso também os chamamos de bancos relacionais. Os dados no SQL são estruturados no formato de tabelas, com colunas e linhas, semelhantes a uma planilha do Excel.
+
+NOSQL: MongoDB, Cassandra, Redis, neo4j.
+
+NoSQL pode significar tanto "não SQL" quanto "não apenas SQL". Na verdade, são todos os bancos que não são gerenciadores SQL.
+
+Eles têm usos muito diferentes e nem todos são bancos de objetos como o MongoDB.
+
+No MongoDB:
+
+-> New projeto -> Nome do projeto ex. "livraria" -> 
+*dessa vez está pedindo pra colocar tag, coloquei na chave: "environment" e valor: "vgd15"*
+-> Não precisa adicionar membros
+-> Vai para a página "Serviços de dados" -> Criar um cluster  Criar 
+-> Escolher o plano M0 FREE
+-> O nome do cluster pode alterar, mas se não quiser tem o nome padrão
+-> Provider AWS
+-> Create Deployment
+-> Add my current IP Address -> add connection
+-> Criar um username e password (anotar usuário e senha em algum lugar, não esquecer dessa informação)
+-> vgd15, Deise15@
+->Create User
+*adicionar o ip 0.0.0.0/0 podemos acessar o banco de qualquer lugar*
+-> Select client category -> Drivers
+-> copiar o código : npm install mongodb -> instalar na nossa aplicação
+-> copiar o que está no valor de  Add connection string into your application code : mongodb+srv://vgd15:<password>@cluster0.djd2rtt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+-> copiar 
+-> Create
+
+Depois
+
+No menu esquerdo, nas opções de Deployment -> Database 
+
+-> Browse Collections -> add my own date
+-> Database name: livraria
+-> Collections name: Livros
+-> Create
+
+-> Apply
+-> insert document
+-> Criar o documento de informações, se tiver algum valor de número, trocar o tipo de string para int32
+-> insert
+
+Foi criando um banco com registros inseridos, agora falta conectar o banco com  a api 
+
+
+
+
+Conectando MongoDB e API
+
+mongoose 
+
+instalação : npm install mongoose
+
+Cria uma pasta em src chamada "config" e dentro dela uma pasta chamada "db.connect.js".
+
+Importa no arquivo criado: import mongoose from "mongoose". 
+
+usa o método mongoose.connect() que recebe como parâmetro a string de conexão que foi copiada acima.
+
+mongoose.connect("mongodb+srv://vgd15:Deise15@@cluster0.djd2rtt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+
+depois de mongodb.net/ colocar o nome do databse no caso é livraria
+
+mongoose.connect("mongodb+srv://vgd15:Deise15@@cluster0.djd2rtt.mongodb.net/livraria?retryWrites=true&w=majority&appName=Cluster0")
+
+Pra poder exportar tudo, criar uma função e colocar a conexão dentro dela.
+
+import mongoose from "mongoose";
+
+async function conectaNaDataBase(){
+    
+    mongoose.connect("mongodb+srv://vgd15:Deise15@@cluster0.djd2rtt.mongodb.net/livraria?retryWrites=true&w=majority&appName=Cluster0");
+    return mongoose.connection;
+}
+
+export default conectaNaDataBase;
+
+Depois importar no arquivo app.js
+
+e colocar após  a importação criar uma const -> const conexao = await conectaNaDataBase(); para de fato conectar
+
+criar um evento caso aconteça algum erro na conexão 
+
+conexao.on("error", (erro) => {
+    console.error("erro de conexão", erro);
+})
+
+depois criar um evento de conexão feita com sucesso
+
+conexao.once("open", () => {
+    console.log("Conexão com o banco feita com sucesso")
+})
+
+obs: a conexão deu erro por causa que a senha tinha um @ o que dificultou o entendimento da máquina,
+URLs usam um esquema de codificação conhecido como URL encoding ou percent encoding para garantir que caracteres especiais não causem problemas. Cada caractere especial é representado por um código hexadecimal precedido por um sinal de porcentagem (%).
+No seu caso, como a senha contém um "@" que precisa ser incluído na URL, você deve substituí-lo por %40. 
+mongodb+srv://vgd15:Deise15%40@cluster0.djd2rtt.mongodb.net/livraria?retryWrites=true&w=majority&appName=Cluster0
+
+CRIANDO MODELS DE SCHEMA
+
+cria uuma pasta na pasta src com nome "models" e dentro dela um arquivo chamado "Livros.js"
+
+o código fica assim:
+
+import mongoose from "mongoose";
+
+const livrosSchema = new mongoose.Schema({
+    id:{type: mongoose.Schema.Types.ObjectId},
+    titulo:{type: String, required:true},
+    editora: {type: String, required:true},
+    preco:{type: Number},
+    paginas:{type:Number}
+}, {versionKey: false}) //se refere ao versionamento do mongodb
+
+const livro = mongoose.model("livros", livroSchema);
+
+export default livro;
+
+no app.js importar o import livro from "./models/Livro.js";
+
+e dai não vai mais precisar do array livros e a função buscaLivro , que vai ficar comentado.
+
+Agora dentro da função app.get("/livros") vamos chamar o modelo, e o código fica assim:
+
+app.get("/livros", async (req, res) => {
+    const listaLivros = await livro.find({})
+    res.status(200).json(listaLivros)
+});
+
+
+
+
+Refatorando com Dotenv e Variáveis de Ambiente
+
+As variáveis de ambiente são utilizadas para separar informações variáveis sensíveis, como senhas e strings de conexão.
+
+npm instal dotenv
+
+Voltando ao VS Code, na raiz do projeto, criaremos um arquivo que se chamará .env, com um ponto no início e sem .js, da mesma forma que o .gitignore.
+
+No interior desse arquivo, estabelecemos as variáveis de ambiente, ou seja, as variáveis que representam todas as informações sensíveis que não podemos compartilhar. No nosso caso, a string de conexão.
+
+Vamos voltar para o arquivo dbconnect.js e recortar a string de conexão inteira, removendo-a de mongoose.connect().
+
+Voltando ao interior do arquivo .env, vamos criar o nome dessa variável. O padrão é escrever tudo em letras maiúsculas e com underline (_), portanto, criaremos a DB_CONNECTION_STRING. Ela receberá a string de conexão que vamos colar, sem a necessidade das aspas duplas.
+
+Após salvar o .env, vamos fechá-lo e abrir o arquivo .gitignore, pois é importante lembrar de incluir nele o .env no mesmo, abaixo de node_modules. Caso contrário, este arquivo acabará sendo enviado para o repositório do GitHub, invalidando o propósito de sua criação.
+
+
+node_modules
+.env
+
+Após essas etapas, precisamos iniciar o .env no ponto mais externo da aplicação, ou seja, o primeiro a ser acessado. No nosso caso, o ponto mais externo da aplicação é o server.js, que está na pasta raiz "src". No início desse arquivo, acima da linha de importação do app, vamos importar o .env utilizando o comando abaixo.
+
+Vamos voltar ao dbConnect.js e acessar o entremeio dos parênteses do mongoose.connect(). Vamos substituir o seu conteúdo (que antes era a string de conexão) pela variável de ambiente. Para fazer isso, iremos nos referir a essa variável por process.env.DB_CONNECTION_STRING. O restante do código continuará igual.
+
+
+CRIANDO CONTROLLER PARA O LIVRO
+
+NA PASTA SRC CRIA UMA PASTA COM O NOME "controllers' e dentro um arquivo "livroControllers.js".
+
+Dentro do controller, nós centralizaremos toda a lógica que está relacionada às ações que podem ser feitas em um livro, ou seja, o que as rotas vão chamar para executar as operações e o manuseio das requisições e respostas correspondentes.
+
+Como ele fará uma interface entre as requisições e o que acontecerá em cada requisição, significará que vamos transferir nossa importação do modelo Livro para cá. Começando na primeira linha, realizaremos a importação do nosso modelo Livro.
+
+
+Também vamos separar as rotas, criando diretórios para elas. Dentro deste diretório, vou criar um arquivo que chamaremos de livrosRoutes, onde "routes" é a tradução para "rotas" em inglês.
+
+Aqui, começamos a organizar a parte das rotas, responsabilidade que também é do Express.
+
+No arquivo livrosRoutes, vou importar o express. E já que a rota precisa se conectar ao controlador, vou importar também nosso controlador.
+
+import express from "express";
+import LivroController from "../controllers/livroCont
+
+Agora, podemos começar a definir as rotas. O Express tem um método específico para lidar com as rotas, e vamos chamá-lo agora. Então, vamos criar uma constante que será chamada routes, igual a express.Router().
+
+const routes = express.Router();
+
+routes.get("/livros", LivroController.listarLivros);
+
+
+Portanto, agora nós podemos regressar ao app.js e excluir o seguinte trecho:
+
+app.get("/livros", async (req, res) => {
+  const listaLivros = await livro.find({});
+  res.status(200).json(listaLivros);
+});
+
+post
+
+static async cadastrarLivro (req, res) {
+        try {
+          const novoLivro = await livro.create(req.body);
+          res.status(201).json({ message: "criado com sucesso", livro: novoLivro });
+        } catch (erro) {
+          res.status(500).json({ message: `${erro.message} - falha ao cadastrar livro` });
+        }
+      }
+
+Agora, devemos adicionar a rota do post no nosso arquivo de rotas, que criamos no livrosRoutes. Mas antes de atualizar as rotas, faremos uma pequena refatoração. Vou usar aqui um padrão, que podemos chamar de barril ou "barrel", que é um ponto de entrada para uma parte da aplicação.
+
+No caso, como teremos bastante rotas, depois teremos rotas de autores, rotas de editoras e possivelmente muitas outras - cada uma podendo ter 5 ou mais rotas – faremos o seguinte: Dentro da pasta routes, criarei um arquivo que chamarei de index.js.
+
+dentro do arquiv:
+
+import express from "express";
+import livros from "./livrosRoutes.js";
+
+const routes = (app) => {
+  app.route("/").get((req, res) => res.status(200).send("Curso de Node.js"));
+
+  app.use(express.json(), livros);
+};
+
+export default routes;
+
+Agora, podemos voltar para app.js. No topo de app.js, não precisaremos mais importar livro do model, pois essa responsabilidade passou para o controller.
+
+Sendo assim, podemos deletar essa linha. Em seu lugar, teremos que importar nossas rotas. Portanto, usamos import routes from routes/index.js. Ele já identificou e trouxe para nós com o JS no final desta vez.
+
+
+Os primeiros gets que criamos anteriormente, o app.get na barra, que retorna "curso de Node", pode ser deletado. Podemos também deletar app.use express.json, porque passamos a responsabilidade desse middleware para nosso ponto de entrada das rotas. Por enquanto, vamos manter as outras rotas que criamos (get-livros-e-por-id, get-post), para assim podermos ir deletando-as com calma.
+
+O que precisamos fazer agora é iniciar nossas rotas, que importamos. Aqui, routes é uma função, portanto, precisamos executar essa função. Abaixo, em nossa atribuição const app="express", sob app, simplesmente chamaremos a função routes que importamos. O que passaremos para dentro dela? O app. Agora, o app que definimos como parâmetro em nossas rotas, lá no index.js das rotas, sabemos de onde ele está vindo e o que ele é: essa é nossa instância do express.
+
+Assim, criamos a função routes em routes-barra-index e executamos routes em app.js, passando nosso servidor express como parâmetro. Agora, tudo está fazendo mais sentido.
+
+COMO FICA O CÓDIGO DO CONTROLER COM O  CRUD COMPLETO:
+
+import livro from "../models/Livro.js";
+
+class LivroController {
+
+  static async listarLivros (req, res) {
+    try {
+      const listaLivros = await livro.find({});
+      res.status(200).json(listaLivros);
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na requisição` });
+    }
+  };
+
+  static async listarLivroPorId (req, res) {
+    try {
+      const id = req.params.id;
+      const livroEncontrado = await livro.findById(id);
+      res.status(200).json(livroEncontrado);
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na requisição do livro` });
+    }
+  };
+
+  static async cadastrarLivro (req, res) {
+    try {
+      const novoLivro = await livro.create(req.body);
+      res.status(201).json({ message: "criado com sucesso", livro: novoLivro });
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha ao cadastrar livro` });
+    }
+  }
+
+  static async atualizarLivro (req, res) {
+    try {
+      const id = req.params.id;
+      await livro.findByIdAndUpdate(id, req.body);
+      res.status(200).json({ message: "livro atualizado" });
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na atualização` });
+    }
+  };
+
+  static async excluirLivro (req, res) {
+    try {
+      const id = req.params.id;
+      await livro.findByIdAndDelete(id);
+      res.status(200).json({ message: "livro excluído com sucesso" });
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na exclusão` });
+    }
+  };
+};
+
+export default LivroController;
+
+nas rotas fica:
+
+import express from "express";
+import LivroController from "../controllers/livroControllers.js";
+
+const routes = express.Router();
+
+routes.get("/livros", LivroController.listarLivros);
+routes.get("/livros/:id", LivroController.listarLivroPorId);
+routes.post("/livros", LivroController.cadastrarLivro);
+routes.put("/livros/:id", LivroController.atualizarLivro);
+routes.delete("/livros/:id", LivroController.excluirLivro);
+
+export default routes;
+
+
+CRIANDO AUTORES | INSERINDO INFORMAÇÃO NOVA NA API
+
+Em model adicionar um novo arquivo "autor.js"
+o código fica assim:
+
+import mongoose from "mongoose";
+
+const autorSchema = new mongoose.Schema({
+    id: {type: mongoose.Schema.Types.ObjectId},
+    nome: {type: String, required:true},
+    nacionalidade: {type: String}
+}, {versionKey: false });
+
+const autor = mongoose.model ("autores", autorSchema);
+
+export {autor, autorSchema};
+
+na pasta Controllers criar um novo arquivo "autorController.js"
+
+import { autor } from "../models/Autor.js";
+
+class AutorController {
+
+  static async listarAutores (req, res) {
+    try {
+      const listaAutores = await autor.find({});
+      res.status(200).json(listaAutores);
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na requisição` });
+    }
+  };
+
+  static async listarAutorPorId (req, res) {
+    try {
+      const id = req.params.id;
+      const autorEncontrado = await autor.findById(id);
+      res.status(200).json(autorEncontrado);
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na requisição do autor` });
+    }
+  };
+
+  static async cadastrarAutor (req, res) {
+    try {
+      const novoAutor = await autor.create(req.body);
+      res.status(201).json({ message: "criado com sucesso", livro: novoAutor });
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha ao cadastrar autor` });
+    }
+  }
+
+  static async atualizarAutor (req, res) {
+    try {
+      const id = req.params.id;
+      await autor.findByIdAndUpdate(id, req.body);
+      res.status(200).json({ message: "autor atualizado" });
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na atualização` });
+    }
+  };
+
+  static async excluirAutor (req, res) {
+    try {
+      const id = req.params.id;
+      await autor.findByIdAndDelete(id);
+      res.status(200).json({ message: "autor excluído com sucesso" });
+    } catch (erro) {
+      res.status(500).json({ message: `${erro.message} - falha na exclusão` });
+    }
+  };
+};
+
+export default AutorController;
+
+na pasta Routes criar um novo arquivo chamado "AutoresRoutes.js"
+
+import express from "express";
+import AutorController from "../controllers/autorController.js";
+
+const routes = express.Router();
+
+routes.get("/autores", AutorController.listarAutores);
+routes.get("/autores/:id", AutorController.listarAutorPorId);
+routes.post("/autores", AutorController.cadastrarAutor);
+routes.put("/autores/:id", AutorController.atualizarAutor);
+routes.delete("/autores/:id", AutorController.excluirAutor);
+
+export default routes;
+
+
+Na pasta index.js 
+
+import express from "express";
+import livros from "./livrosRoutes.js";
+import autores from "../routes/autoresRoutes.js"
+
+const routes = (app) => {
+  app.route("/").get((req, res) => res.status(200).send("Curso de Node.js"));
+
+  app.use(express.json(), livros, autores);
+};
+
+export default routes;
+
+
+
+
+UNINDO LIVROS E AUTORES
+
+No arquivo Livro.js
+
+import mongoose from "mongoose";
+import { autorSchema } from "./autor.js";
+
+const livroSchema = new mongoose.Schema ({
+    id: { type: mongoose.Schema.Types.ObjectId },
+    titulo: { type: String, required: true },
+    editora: { type: String },
+    preco: { type: Number },
+    paginas: { type: Number },
+    autor: autorSchema
+}, { versionKey: false });
+
+const livro = mongoose.model("livros", livroSchema);
+
+export default livro;
+
+
+Cadastrando livro com autor formato:
+
+cadastrando autor:
+{ 
+  "nome": "Eduardo",
+  "nacionalidade": "Jamaicano"
+}
+
+para cadastrar um livro com autor tem que  pegar a url http://localhost:3000/autores e ver o id do autor acima e ao cadastrar um novo livro colocar o id do autor
+{ 
+  "titulo":"Eduardo e Mônica",
+  "autor":"6681a67f92b273d5fdaf46ba"
+}
+
+
+
+
+COMO SERIA BUSCANDO LIVRO POR EDITORA?
+
+no arquivo livroControllers.js
+adicionar:
+
+static async listarLivrosPorEditora (req, res) {
+    const editora = req.query.editora;
+
+    try {
+        const livrosPorEditora = await livro.find({ editora: editora });
+        res.status(200).json(livrosPorEditora);
+    } catch (erro) {
+        res.status(500).json({ message: `${erro.message} - falha na busca` });
+    }
+}
+
+No livroRoutes.js: 
+
+adicionar:
+
+import express from "express";
+import LivroController from "../controllers/livroController.js";
+
+const routes = express.Router();
+
+routes.get("/livros", LivroController.listarLivros);
+routes.get("/livros/busca", LivroController.listarLivrosPorEditora);
+routes.get("/livros/:id", LivroController.listarLivroPorId);
+routes.post("/livros", LivroController.cadastrarLivro);
+routes.put("/livros/:id", LivroController.atualizarLivro);
+routes.delete("/livros/:id", LivroController.excluirLivro);
+
+export default routes;
+
+na busca fica assim:
+
+http://localhost:3000/livros/busca?editora=Classicos
+
+
+***Para inicializar o projeto npm run dev no terminal***
+
+
+
+
+
+
+
+
+
